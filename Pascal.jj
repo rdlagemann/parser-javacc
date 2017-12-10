@@ -1,0 +1,306 @@
+PARSER_BEGIN(Pascal)
+import java.io.*;
+public class Pascal {
+
+  public static void main(String args[]) throws ParseException,IOException {
+    
+    Pascal parser = new Pascal(new FileInputStream(args[0]));
+    parser.Programa();
+  }
+
+}
+
+PARSER_END(Pascal)
+
+SKIP :
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+}
+
+TOKEN :
+{
+  <PROGRAM: "program">
+| <INTEIRO: "integer">
+| <REAL: "real">
+| <VAR: "var">
+| <OF: "of">
+| <FUNCTION: "function">
+| <PROCEDURE: "procedure">
+| <LBRACE:"(">
+| <RBRACE: ")">
+| <SEMI: ";">
+| <DOISP: ":">
+| <ARRAY: "array">
+| <LCOL: "[">
+| <RCOL: "]">
+| <RETICE: ".." >
+| <E: "E">
+| <BEGIN: "begin">
+| <END: "end">
+| <ATRIBUICAO: ":=">
+| <IF: "if">
+| <THEN: "then">
+| <ELSE: "else">
+| <WHILE: "while">
+| <DO: "do">
+| <NOT: "not">
+| <POSITIVO: "+">
+| <NEGATIVO: "-">
+}
+
+TOKEN :
+{
+ <OPERADOR_MULTIPLICATIVO: ("*"|"/"|"div"|"mod"|"and")>
+|
+<OPERADOR_ADITIVO: ("+"| "-" | "or")>
+|
+<OPERADOR_RELACIONAL: ("="|"<"|">"|"<>"|"<="|">=")>
+|
+< ID: ["a"-"z","A"-"Z"] ( ["a"-"z","A"-"Z","0"-"9"])*>
+|
+<NUM: <DIGITOS> <FRAC_OPCIONAL> <EXP_OPCIONAL>  >
+|
+<DIGITO: ["0"-"9"]>
+|
+<DIGITOS: <DIGITO> (<DIGITO>)*>
+|
+<FRAC_OPCIONAL:  ("." <DIGITOS>)*>
+|
+<EXP_OPCIONAL: (<E> ("+"|"-")? <DIGITOS>)* >
+
+}
+
+
+void Lista_de_identificadores():
+{}
+{
+  <ID> Lista2()
+}
+
+void Lista2():
+{}
+{
+ ("," <ID> Lista2())?
+}
+
+void Tipo_padrao():
+{}
+{
+ <INTEIRO>
+ | <REAL>
+}
+
+void Tipo():
+{}
+{
+ Tipo_padrao()
+ | <ARRAY> <LCOL> <DIGITOS> <RETICE> <DIGITOS> <RCOL> <OF> Tipo_padrao()
+}
+
+void Declaracoes():
+{}
+{
+ (<VAR> Lista_de_identificadores() <DOISP> Tipo() <SEMI>)*
+}
+
+void Declaracoes_de_subprogramas():
+{}
+{
+  (Declaracoes_de_subprograma() <SEMI>)*
+}
+
+void Declaracoes_de_subprograma():
+{}
+{
+  Cabecalho_de_subprograma()
+  Declaracoes()
+  Enunciado_composto()
+}
+
+void Cabecalho_de_subprograma():
+{}
+{
+  <FUNCTION> <ID> Argumentos() <DOISP> Tipo_padrao() <SEMI>
+  | <PROCEDURE> <ID> Argumentos() <SEMI>
+}
+
+void Argumentos():
+{}
+{
+  (<LBRACE>Lista_de_parametros()<RBRACE>)*
+}
+
+void Lista_de_parametros():
+{}
+{
+  Lista_de_identificadores() <DOISP> Tipo() Lista_de_parametros2()
+}
+
+void Lista_de_parametros2():
+{}
+{
+  (<DOISP> Lista_de_identificadores() <DOISP> Tipo() Lista_de_parametros2())?
+}
+
+void Enunciado_composto():
+{}
+{
+ <BEGIN> Enunciados_opicionais() <END> 
+}
+
+void Enunciados_opicionais():
+{}
+{
+  (Lista_de_enunciados())?
+}
+
+void Lista_de_enunciados():
+{}
+{
+  Enunciado() Lista_de_enunciados2()
+}
+
+void Lista_de_enunciados2():
+{}
+{
+  (<SEMI> Enunciado() Lista_de_enunciados2())?
+}
+
+void Enunciado ():
+{}
+{
+  //Variavel() <ATRIBUICAO> Expressao()
+  //|Chamada_de_procedimento()
+  <ID> VarOuChamadaDeProc()
+  |Enunciado_composto()
+  |<IF> Expressao() <THEN> Enunciado() <ELSE> Enunciado()
+  |<WHILE> Expressao() <DO> Enunciado()
+}
+
+void VarOuChamadaDeProc():
+{}
+{
+  Variavel2() <ATRIBUICAO> Expressao()
+  | Chamada_de_procedimento2() 
+}
+
+void Variavel() :
+{}
+{
+  <ID> Variavel2()
+}
+
+void Variavel2():
+{}
+{
+  (<LCOL> Expressao() <RCOL>)?
+}
+
+void Expressao():
+{}
+{
+  Expressao_simples() Expressao2()
+}
+
+void Expressao2():
+{}
+{
+  (<OPERADOR_RELACIONAL> Expressao_simples())?
+}
+
+void Chamada_de_procedimento():
+{}
+{
+  <ID> Chamada_de_procedimento2()
+}
+
+void Chamada_de_procedimento2():
+{}
+{
+  (<LBRACE> Lista_de_expressoes() <RBRACE>)?
+}
+
+void Lista_de_expressoes() :
+{}
+{
+  Expressao() Lista_de_expressoes2()
+}
+
+void Lista_de_expressoes2():
+{}
+{
+  ("," Expressao())*
+}
+
+void Expressao_simples():
+{}
+{
+  Termo() Expressao_simples2()
+  | Sinal() Termo() Expressao_simples2()
+}
+
+void Expressao_simples2():
+{}
+{
+  (<OPERADOR_ADITIVO> Termo()Expressao_simples2())?
+}
+
+void Termo():
+{}
+{
+  Fator() Termo2()
+}
+
+void Termo2():
+{}
+{
+  (<OPERADOR_MULTIPLICATIVO> Fator() Termo2())?
+}
+
+void Fator():
+{}
+{
+  <ID> FatorFix()
+  // | <ID> <LBRACE> Lista_de_expressoes() <RBRACE>
+  | <NUM>
+  | <LBRACE> Expressao() <RBRACE>
+  | <NOT> Fator()
+}
+
+void FatorFix():
+{}
+{
+  (<LBRACE> Lista_de_expressoes() <RBRACE>)?
+}
+
+void Sinal():
+{}
+{
+  <POSITIVO>
+  |<NEGATIVO>
+}
+
+
+
+void Programa () :
+{}
+{ <PROGRAM> <ID> 
+  <LBRACE> Lista_de_identificadores() <RBRACE> <SEMI>
+  Declaracoes()
+  Declaracoes_de_subprogramas() 
+  Enunciado_composto() "."
+  <EOF> 
+}
+	
+
+
+
+
+
+
+
+
+
